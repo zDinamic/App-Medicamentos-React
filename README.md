@@ -15,7 +15,7 @@ Professor: Julio Cartier
 
 Idosos frequentemente tomam múltiplos medicamentos ao longo do dia e têm dificuldade em lembrar os horários e as doses corretas. Esse problema pode levar a erros de medicação graves, comprometendo a saúde e a autonomia de quem vive sozinho.
 
-O **MediCare** é um aplicativo móvel desenvolvido para auxiliar idosos e seus cuidadores no controle diário de medicamentos. Com ele é possível cadastrar remédios com nome, dose e horários, acompanhar o status de tomada ao longo do dia e consultar o histórico dos últimos 7 dias — tudo com uma interface simples e com texto grande, pensada para facilitar o uso por pessoas idosas.
+O **MediCare** é um aplicativo móvel desenvolvido para auxiliar idosos e seus cuidadores no controle diário de medicamentos. Com ele é possível cadastrar remédios com nome, dose e horários, acompanhar o status de tomada ao longo do dia e consultar o histórico dos últimos 7 dias, tudo com uma interface simples e com texto grande, pensada para facilitar o uso por pessoas idosas.
 
 ---
 
