@@ -1,5 +1,3 @@
-#GitIgnore
-.claude/
 node_modules/
 .expo/
 dist/
@@ -13,3 +11,4 @@ npm-debug.*
 *.orig.*
 .env
 .env.local
+.claude/
