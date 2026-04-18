@@ -9,10 +9,10 @@
       "supportsTablet": true
     },
     "android": {
-      "package": "com.medicare.app",
-      "adaptiveIcon": {
-        "backgroundColor": "#2563EB"
-      }
+      "package": "com.medicare.app"
     },
+    "plugins": [
+      "@react-native-community/datetimepicker"
+    ]
   }
 }
