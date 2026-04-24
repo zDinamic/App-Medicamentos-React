@@ -8,7 +8,7 @@ Professor: Julio Cartier
 ## Integrantes
 
 - Victor Pacheco da Silva Bathich
-
+- Marcelo Alexandre Vitorino Raimundo
 ---
 
 ## Problema Social
