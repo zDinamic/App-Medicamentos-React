@@ -1,11 +1,13 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { colors } from '../theme';
 
-// Componente reutilizável — será usado nas Fases 3 e 4
 export default function StatusBadge({ tomado }) {
   return (
     <View style={[styles.badge, tomado ? styles.tomado : styles.pendente]}>
-      <Text style={styles.texto}>{tomado ? '✅ Tomado' : '⏰ Pendente'}</Text>
+      <Text style={[styles.texto, tomado ? styles.textoTomado : styles.textoPendente]}>
+        {tomado ? 'Tomado' : 'Pendente'}
+      </Text>
     </View>
   );
 }
@@ -13,11 +15,13 @@ export default function StatusBadge({ tomado }) {
 const styles = StyleSheet.create({
   badge: {
     paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 20,
+    paddingVertical: 5,
+    borderRadius: 999,
     alignSelf: 'flex-start',
   },
-  tomado: { backgroundColor: '#DCFCE7' },
-  pendente: { backgroundColor: '#FEF9C3' },
-  texto: { fontSize: 14, fontWeight: '600' },
+  tomado: { backgroundColor: colors.successSoft },
+  pendente: { backgroundColor: colors.warningSoft },
+  texto: { fontSize: 13, fontWeight: '900' },
+  textoTomado: { color: colors.success },
+  textoPendente: { color: colors.warning },
 });

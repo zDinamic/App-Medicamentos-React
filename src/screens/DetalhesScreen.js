@@ -1,49 +1,70 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View, Text, TouchableOpacity, ScrollView,
-  StyleSheet, Alert,
+  StyleSheet, Alert, Platform, ActivityIndicator,
 } from 'react-native';
 import { doc, deleteDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
+import { colors, shadows } from '../theme';
 
 export default function DetalhesScreen({ navigation, route }) {
   const { medicamento } = route.params;
+  const [excluindo, setExcluindo] = useState(false);
+
+  const confirmarExclusao = async () => {
+    if (!medicamento?.id) {
+      Alert.alert('Erro', 'Medicamento inválido.');
+      return;
+    }
+
+    setExcluindo(true);
+    try {
+      await deleteDoc(doc(db, 'medicamentos', medicamento.id));
+      Alert.alert('Excluído!', 'Medicamento removido com sucesso.', [
+        { text: 'OK', onPress: () => navigation.navigate('Lista') },
+      ]);
+    } catch (e) {
+      Alert.alert('Erro', 'Não foi possível excluir o medicamento.');
+    } finally {
+      setExcluindo(false);
+    }
+  };
 
   const excluir = () => {
+    if (Platform.OS === 'web') {
+      const confirmado = window.confirm(`Tem certeza que deseja excluir "${medicamento.nome}"?`);
+      if (confirmado) confirmarExclusao();
+      return;
+    }
+
     Alert.alert(
-      'Excluir Medicamento',
+      'Excluir medicamento',
       `Tem certeza que deseja excluir "${medicamento.nome}"?`,
       [
         { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Excluir',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await deleteDoc(doc(db, 'medicamentos', medicamento.id));
-              navigation.goBack();
-            } catch (e) {
-              Alert.alert('Erro', 'Não foi possível excluir o medicamento.');
-            }
-          },
-        },
+        { text: 'Excluir', style: 'destructive', onPress: confirmarExclusao },
       ]
     );
   };
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.card}>
+    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <View style={styles.hero}>
+        <View style={styles.initialCircle}>
+          <Text style={styles.initialText}>{medicamento.nome?.charAt(0)?.toUpperCase() || 'M'}</Text>
+        </View>
         <Text style={styles.nome}>{medicamento.nome}</Text>
         <Text style={styles.dose}>{medicamento.dose}</Text>
+      </View>
 
+      <View style={styles.card}>
         {medicamento.horarios?.length > 0 && (
           <View style={styles.secao}>
             <Text style={styles.secaoTitulo}>Horários</Text>
             <View style={styles.tagsRow}>
               {medicamento.horarios.map(h => (
                 <View key={h} style={styles.tag}>
-                  <Text style={styles.tagText}>🕐 {h}</Text>
+                  <Text style={styles.tagText}>{h}</Text>
                 </View>
               ))}
             </View>
@@ -52,11 +73,11 @@ export default function DetalhesScreen({ navigation, route }) {
 
         {medicamento.diasDaSemana?.length > 0 && (
           <View style={styles.secao}>
-            <Text style={styles.secaoTitulo}>Dias da Semana</Text>
+            <Text style={styles.secaoTitulo}>Dias da semana</Text>
             <View style={styles.tagsRow}>
               {medicamento.diasDaSemana.map(d => (
-                <View key={d} style={styles.tag}>
-                  <Text style={styles.tagText}>{d}</Text>
+                <View key={d} style={[styles.tag, styles.tagSoft]}>
+                  <Text style={[styles.tagText, styles.tagTextSoft]}>{d}</Text>
                 </View>
               ))}
             </View>
@@ -74,61 +95,86 @@ export default function DetalhesScreen({ navigation, route }) {
       <TouchableOpacity
         style={styles.btnEditar}
         onPress={() => navigation.navigate('Formulario', { medicamento })}
+        disabled={excluindo}
       >
-        <Text style={styles.btnEditarText}>✏️  Editar Medicamento</Text>
+        <Text style={styles.btnEditarText}>Editar medicamento</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.btnExcluir} onPress={excluir}>
-        <Text style={styles.btnExcluirText}>🗑️  Excluir Medicamento</Text>
+      <TouchableOpacity
+        style={[styles.btnExcluir, excluindo && styles.btnDesabilitado]}
+        onPress={excluir}
+        disabled={excluindo}
+      >
+        {excluindo
+          ? <ActivityIndicator color={colors.danger} />
+          : <Text style={styles.btnExcluirText}>Excluir medicamento</Text>
+        }
       </TouchableOpacity>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F0F4FF' },
-  card: {
-    backgroundColor: '#fff',
-    margin: 16,
-    borderRadius: 16,
+  container: { flex: 1, backgroundColor: colors.bg },
+  content: { padding: 16, paddingBottom: 42 },
+  hero: {
+    backgroundColor: colors.primary,
+    borderRadius: 22,
     padding: 20,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    alignItems: 'flex-start',
+    ...shadows.card,
   },
-  nome: { fontSize: 26, fontWeight: 'bold', color: '#1E293B' },
-  dose: { fontSize: 20, color: '#2563EB', marginTop: 6, fontWeight: '600' },
-  secao: { marginTop: 20 },
+  initialCircle: {
+    width: 54,
+    height: 54,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  initialText: { color: '#fff', fontWeight: '900', fontSize: 24 },
+  nome: { fontSize: 28, fontWeight: '900', color: '#fff' },
+  dose: { fontSize: 17, color: '#DCEBFF', marginTop: 6, fontWeight: '800' },
+  card: {
+    backgroundColor: colors.surface,
+    marginTop: 14,
+    borderRadius: 18,
+    padding: 18,
+    borderWidth: 1,
+    borderColor: colors.border,
+    ...shadows.card,
+  },
+  secao: { marginBottom: 20 },
   secaoTitulo: {
     fontSize: 12,
-    fontWeight: '700',
-    color: '#9CA3AF',
-    letterSpacing: 0.8,
+    fontWeight: '900',
+    color: colors.muted,
     textTransform: 'uppercase',
-    marginBottom: 8,
+    marginBottom: 10,
   },
   tagsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  tag: { backgroundColor: '#DBEAFE', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 7 },
-  tagText: { fontSize: 14, color: '#2563EB', fontWeight: '600' },
-  observacoes: { fontSize: 15, color: '#475569', lineHeight: 22 },
+  tag: { backgroundColor: colors.primarySoft, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8 },
+  tagSoft: { backgroundColor: colors.tealSoft },
+  tagText: { fontSize: 14, color: colors.primaryDark, fontWeight: '900' },
+  tagTextSoft: { color: colors.teal },
+  observacoes: { fontSize: 15, color: colors.muted, lineHeight: 22, fontWeight: '600' },
   btnEditar: {
-    backgroundColor: '#2563EB',
-    borderRadius: 12,
+    backgroundColor: colors.primary,
+    borderRadius: 16,
     padding: 16,
     alignItems: 'center',
-    marginHorizontal: 16,
-    marginBottom: 12,
+    marginTop: 16,
+    ...shadows.float,
   },
-  btnEditarText: { fontSize: 16, fontWeight: 'bold', color: '#fff' },
+  btnEditarText: { fontSize: 16, fontWeight: '900', color: '#fff' },
   btnExcluir: {
-    backgroundColor: '#FEE2E2',
-    borderRadius: 12,
+    backgroundColor: colors.dangerSoft,
+    borderRadius: 16,
     padding: 16,
     alignItems: 'center',
-    marginHorizontal: 16,
-    marginBottom: 40,
+    marginTop: 12,
   },
-  btnExcluirText: { fontSize: 16, fontWeight: 'bold', color: '#DC2626' },
+  btnDesabilitado: { opacity: 0.65 },
+  btnExcluirText: { fontSize: 16, fontWeight: '900', color: colors.danger },
 });

@@ -6,6 +6,7 @@ import {
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { collection, addDoc, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../config/firebase';
+import { colors, shadows } from '../theme';
 
 const DIAS = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
 
@@ -24,9 +25,9 @@ export default function FormularioScreen({ navigation, route }) {
   const [horarios, setHorarios] = useState([]);
   const [diasSelecionados, setDiasSelecionados] = useState([]);
   const [salvando, setSalvando] = useState(false);
-
   const [mostrarPicker, setMostrarPicker] = useState(false);
   const [horarioSelecionado, setHorarioSelecionado] = useState(new Date());
+  const [horarioManual, setHorarioManual] = useState(formatarHora(new Date()));
 
   useEffect(() => {
     if (editando) {
@@ -36,23 +37,49 @@ export default function FormularioScreen({ navigation, route }) {
       setHorarios(editando.horarios || []);
       setDiasSelecionados(editando.diasDaSemana || []);
     }
-    navigation.setOptions({ title: editando ? 'Editar Medicamento' : 'Novo Medicamento' });
+    navigation.setOptions({ title: editando ? 'Editar medicamento' : 'Novo medicamento' });
   }, []);
 
-  const onChangePicker = (event, date) => {
-    if (Platform.OS === 'android') setMostrarPicker(false);
-    if (event.type === 'dismissed') return;
-    if (date) setHorarioSelecionado(date);
+  const irParaHoje = () => {
+    const parent = navigation.getParent();
+    if (parent) {
+      parent.navigate('Home');
+    } else {
+      navigation.navigate('Home');
+    }
   };
 
-  const adicionarHorario = () => {
-    const h = formatarHora(horarioSelecionado);
+  const adicionarHorarioValor = (valor) => {
+    const h = valor.trim();
+    if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(h)) {
+      Alert.alert('Horário inválido', 'Informe um horário no formato HH:MM.');
+      return;
+    }
     if (horarios.includes(h)) {
       Alert.alert('Já adicionado', 'Esse horário já está na lista.');
       return;
     }
-    setHorarios([...horarios, h].sort());
+    setHorarios(prev => [...prev, h].sort());
     setMostrarPicker(false);
+  };
+
+  const onChangePicker = (event, date) => {
+    if (Platform.OS === 'android') setMostrarPicker(false);
+    if (event.type === 'dismissed') return;
+    if (!date) return;
+
+    const hora = formatarHora(date);
+    setHorarioSelecionado(date);
+    setHorarioManual(hora);
+
+    if (Platform.OS === 'android') {
+      adicionarHorarioValor(hora);
+    }
+  };
+
+  const adicionarHorario = () => {
+    const hora = Platform.OS === 'web' ? horarioManual : formatarHora(horarioSelecionado);
+    adicionarHorarioValor(hora);
   };
 
   const toggleDia = (dia) =>
@@ -79,7 +106,14 @@ export default function FormularioScreen({ navigation, route }) {
         Alert.alert('Salvo!', 'Medicamento atualizado.', [{ text: 'OK', onPress: () => navigation.goBack() }]);
       } else {
         await addDoc(collection(db, 'medicamentos'), { ...dados, criadoEm: serverTimestamp() });
-        Alert.alert('Cadastrado!', 'Medicamento adicionado.', [{ text: 'OK', onPress: () => navigation.goBack() }]);
+        if (Platform.OS === 'web') {
+          window.alert('Medicamento adicionado com sucesso.');
+          irParaHoje();
+        } else {
+          Alert.alert('Cadastrado!', 'Medicamento adicionado com sucesso.', [
+            { text: 'OK', onPress: irParaHoje },
+          ]);
+        }
       }
     } catch (e) {
       Alert.alert('Erro', 'Não foi possível salvar.\nVerifique a configuração do Firebase.');
@@ -89,168 +123,265 @@ export default function FormularioScreen({ navigation, route }) {
   };
 
   return (
-    <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.content}
+      keyboardShouldPersistTaps="handled"
+    >
+      <View style={styles.hero}>
+        <Text style={styles.kicker}>{editando ? 'Editar rotina' : 'Nova rotina'}</Text>
+        <Text style={styles.heroTitle}>Dados do medicamento</Text>
+        <Text style={styles.heroSubtitle}>Organize nome, dose, horários e dias de uso.</Text>
+      </View>
 
-      <Text style={styles.label}>Nome do Medicamento *</Text>
-      <TextInput
-        style={styles.input}
-        value={nome}
-        onChangeText={setNome}
-        placeholder="Ex: Losartana"
-        placeholderTextColor="#9CA3AF"
-      />
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Identificação</Text>
 
-      <Text style={styles.label}>Dose *</Text>
-      <TextInput
-        style={styles.input}
-        value={dose}
-        onChangeText={setDose}
-        placeholder="Ex: 50mg"
-        placeholderTextColor="#9CA3AF"
-      />
+        <Text style={styles.label}>Nome do medicamento *</Text>
+        <TextInput
+          style={styles.input}
+          value={nome}
+          onChangeText={setNome}
+          placeholder="Ex: Losartana"
+          placeholderTextColor="#98A2B3"
+        />
 
-      <Text style={styles.label}>Horários</Text>
+        <Text style={styles.label}>Dose *</Text>
+        <TextInput
+          style={styles.input}
+          value={dose}
+          onChangeText={setDose}
+          placeholder="Ex: 50mg"
+          placeholderTextColor="#98A2B3"
+        />
+      </View>
 
-      <TouchableOpacity style={styles.btnHorario} onPress={() => setMostrarPicker(true)}>
-        <Text style={styles.btnHorarioText}>🕐  Selecionar horário</Text>
-      </TouchableOpacity>
-
-      {mostrarPicker && (
-        <View>
-          <DateTimePicker
-            value={horarioSelecionado}
-            mode="time"
-            is24Hour={true}
-            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-            onChange={onChangePicker}
-          />
-          {Platform.OS === 'ios' && (
-            <View style={styles.iosPickerBtns}>
-              <TouchableOpacity onPress={() => setMostrarPicker(false)} style={styles.btnCancelar}>
-                <Text style={styles.btnCancelarText}>Cancelar</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={adicionarHorario} style={styles.btnConfirmar}>
-                <Text style={styles.btnConfirmarText}>Adicionar</Text>
-              </TouchableOpacity>
-            </View>
-          )}
+      <View style={styles.section}>
+        <View style={styles.sectionHeaderRow}>
+          <Text style={styles.sectionTitle}>Horários</Text>
+          <Text style={styles.counterText}>{horarios.length} selecionado(s)</Text>
         </View>
-      )}
 
-      {!mostrarPicker && Platform.OS === 'android' && (
-        <TouchableOpacity style={styles.btnAddHorario} onPress={adicionarHorario}>
-          <Text style={styles.btnAddHorarioText}>+ Adicionar {formatarHora(horarioSelecionado)}</Text>
+        <TouchableOpacity style={styles.btnHorario} onPress={() => setMostrarPicker(true)}>
+          <Text style={styles.btnHorarioText}>
+            {Platform.OS === 'web' ? 'Digitar horário' : 'Selecionar horário'}
+          </Text>
         </TouchableOpacity>
-      )}
 
-      {horarios.length > 0 && (
-        <View style={styles.tagsRow}>
-          {horarios.map(h => (
-            <TouchableOpacity key={h} style={styles.tag} onPress={() => setHorarios(horarios.filter(x => x !== h))}>
-              <Text style={styles.tagText}>{h}  ✕</Text>
+        {mostrarPicker && Platform.OS === 'web' && (
+          <View style={styles.manualTimeWrap}>
+            <TextInput
+              style={[styles.input, styles.manualTimeInput]}
+              value={horarioManual}
+              onChangeText={setHorarioManual}
+              placeholder="08:00"
+              placeholderTextColor="#98A2B3"
+              keyboardType="numeric"
+              maxLength={5}
+            />
+            <TouchableOpacity onPress={adicionarHorario} style={styles.btnConfirmarHorario}>
+              <Text style={styles.btnConfirmarText}>Adicionar horário</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {mostrarPicker && Platform.OS !== 'web' && (
+          <View style={styles.pickerWrap}>
+            <DateTimePicker
+              value={horarioSelecionado}
+              mode="time"
+              is24Hour={true}
+              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+              onChange={onChangePicker}
+            />
+            {Platform.OS === 'ios' && (
+              <View style={styles.iosPickerBtns}>
+                <TouchableOpacity onPress={() => setMostrarPicker(false)} style={styles.btnCancelar}>
+                  <Text style={styles.btnCancelarText}>Cancelar</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={adicionarHorario} style={styles.btnConfirmar}>
+                  <Text style={styles.btnConfirmarText}>Adicionar</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        )}
+
+        {!mostrarPicker && Platform.OS === 'web' && (
+          <TouchableOpacity style={styles.btnAddHorario} onPress={adicionarHorario}>
+            <Text style={styles.btnAddHorarioText}>Adicionar {horarioManual}</Text>
+          </TouchableOpacity>
+        )}
+
+        {!mostrarPicker && Platform.OS === 'android' && (
+          <TouchableOpacity style={styles.btnAddHorario} onPress={adicionarHorario}>
+            <Text style={styles.btnAddHorarioText}>Adicionar {formatarHora(horarioSelecionado)}</Text>
+          </TouchableOpacity>
+        )}
+
+        {horarios.length > 0 && (
+          <View style={styles.tagsRow}>
+            {horarios.map(h => (
+              <TouchableOpacity key={h} style={styles.tag} onPress={() => setHorarios(horarios.filter(x => x !== h))}>
+                <Text style={styles.tagText}>{h}  ×</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Recorrência</Text>
+        <Text style={styles.helperText}>Se nenhum dia for selecionado, o medicamento aparecerá todos os dias.</Text>
+        <View style={styles.diasRow}>
+          {DIAS.map(dia => (
+            <TouchableOpacity
+              key={dia}
+              style={[styles.diaBtn, diasSelecionados.includes(dia) && styles.diaBtnAtivo]}
+              onPress={() => toggleDia(dia)}
+            >
+              <Text style={[styles.diaBtnText, diasSelecionados.includes(dia) && styles.diaBtnTextAtivo]}>
+                {dia}
+              </Text>
             </TouchableOpacity>
           ))}
         </View>
-      )}
-
-      <Text style={styles.label}>Dias da Semana</Text>
-      <View style={styles.diasRow}>
-        {DIAS.map(dia => (
-          <TouchableOpacity
-            key={dia}
-            style={[styles.diaBtn, diasSelecionados.includes(dia) && styles.diaBtnAtivo]}
-            onPress={() => toggleDia(dia)}
-          >
-            <Text style={[styles.diaBtnText, diasSelecionados.includes(dia) && styles.diaBtnTextAtivo]}>
-              {dia}
-            </Text>
-          </TouchableOpacity>
-        ))}
       </View>
 
-      <Text style={styles.label}>Observações</Text>
-      <TextInput
-        style={[styles.input, styles.textArea]}
-        value={observacoes}
-        onChangeText={setObservacoes}
-        placeholder="Ex: Tomar com água, em jejum..."
-        placeholderTextColor="#9CA3AF"
-        multiline
-        numberOfLines={3}
-      />
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Observações</Text>
+        <TextInput
+          style={[styles.input, styles.textArea]}
+          value={observacoes}
+          onChangeText={setObservacoes}
+          placeholder="Ex: tomar com água, em jejum..."
+          placeholderTextColor="#98A2B3"
+          multiline
+          numberOfLines={3}
+        />
+      </View>
 
       <TouchableOpacity
-        style={[styles.btnSalvar, salvando && { opacity: 0.7 }]}
+        style={[styles.btnSalvar, salvando && styles.disabled]}
         onPress={salvar}
         disabled={salvando}
       >
         {salvando
           ? <ActivityIndicator color="#fff" />
-          : <Text style={styles.btnSalvarText}>{editando ? 'Salvar Alterações' : 'Cadastrar Medicamento'}</Text>
+          : <Text style={styles.btnSalvarText}>{editando ? 'Salvar alterações' : 'Cadastrar medicamento'}</Text>
         }
       </TouchableOpacity>
-
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F0F4FF', padding: 16 },
-  label: { fontSize: 15, fontWeight: '600', color: '#1E293B', marginTop: 20, marginBottom: 6 },
+  container: { flex: 1, backgroundColor: colors.bg },
+  content: { padding: 16, paddingBottom: 120 },
+  hero: {
+    backgroundColor: colors.primary,
+    borderRadius: 22,
+    padding: 20,
+    marginBottom: 14,
+    ...shadows.card,
+  },
+  kicker: { fontSize: 12, fontWeight: '900', color: '#BFDBFE', textTransform: 'uppercase' },
+  heroTitle: { fontSize: 24, fontWeight: '900', color: '#fff', marginTop: 4 },
+  heroSubtitle: { fontSize: 14, color: '#DCEBFF', marginTop: 6, lineHeight: 20, fontWeight: '600' },
+  section: {
+    backgroundColor: colors.surface,
+    borderRadius: 18,
+    padding: 16,
+    marginTop: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+    ...shadows.card,
+  },
+  sectionHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  sectionTitle: { fontSize: 17, fontWeight: '900', color: colors.text },
+  counterText: { fontSize: 12, color: colors.primary, fontWeight: '900' },
+  label: { fontSize: 13, fontWeight: '800', color: colors.muted, marginTop: 16, marginBottom: 7 },
   input: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 12,
+    backgroundColor: '#FAFBFF',
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 13,
     fontSize: 16,
-    color: '#1E293B',
+    color: colors.text,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: colors.border,
   },
-  textArea: { height: 80, textAlignVertical: 'top' },
+  textArea: { height: 92, textAlignVertical: 'top', marginTop: 12 },
   btnHorario: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
+    backgroundColor: colors.primary,
+    borderRadius: 14,
     padding: 14,
-    borderWidth: 1,
-    borderColor: '#2563EB',
     alignItems: 'center',
+    marginTop: 14,
   },
-  btnHorarioText: { fontSize: 16, color: '#2563EB', fontWeight: '600' },
-  btnAddHorario: {
-    backgroundColor: '#DBEAFE',
-    borderRadius: 10,
-    padding: 12,
+  btnHorarioText: { fontSize: 15, color: '#fff', fontWeight: '900' },
+  pickerWrap: { marginTop: 10 },
+  manualTimeWrap: {
+    flexDirection: 'column',
+    alignItems: 'stretch',
+    width: '100%',
+    maxWidth: '100%',
+    marginTop: 10,
+  },
+  manualTimeInput: {
+    width: '100%',
+    maxWidth: '100%',
+    textAlign: 'center',
+    fontWeight: '900',
+  },
+  btnConfirmarHorario: {
+    backgroundColor: colors.primary,
+    borderRadius: 12,
+    padding: 13,
     alignItems: 'center',
     marginTop: 8,
+    width: '100%',
+    maxWidth: '100%',
   },
-  btnAddHorarioText: { fontSize: 15, color: '#2563EB', fontWeight: '600' },
+  btnAddHorario: {
+    backgroundColor: colors.primarySoft,
+    borderRadius: 14,
+    padding: 13,
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  btnAddHorarioText: { fontSize: 14, color: colors.primaryDark, fontWeight: '900' },
   iosPickerBtns: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 },
   btnCancelar: { padding: 12 },
-  btnCancelarText: { fontSize: 16, color: '#64748B' },
-  btnConfirmar: { backgroundColor: '#2563EB', borderRadius: 10, padding: 12, paddingHorizontal: 20 },
-  btnConfirmarText: { fontSize: 16, color: '#fff', fontWeight: '600' },
-  tagsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 },
-  tag: { backgroundColor: '#DBEAFE', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 7 },
-  tagText: { fontSize: 14, color: '#2563EB', fontWeight: '600' },
-  diasRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  btnCancelarText: { fontSize: 16, color: colors.muted, fontWeight: '700' },
+  btnConfirmar: { backgroundColor: colors.primary, borderRadius: 12, padding: 12, paddingHorizontal: 20 },
+  btnConfirmarText: { fontSize: 16, color: '#fff', fontWeight: '800' },
+  tagsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
+  tag: { backgroundColor: colors.tealSoft, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8 },
+  tagText: { fontSize: 14, color: colors.teal, fontWeight: '900' },
+  helperText: { fontSize: 13, color: colors.muted, marginTop: 6, lineHeight: 19 },
+  diasRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
   diaBtn: {
-    borderRadius: 20,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+    minWidth: 46,
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
     borderWidth: 1.5,
-    borderColor: '#CBD5E1',
-    backgroundColor: '#fff',
+    borderColor: colors.border,
+    backgroundColor: '#FAFBFF',
+    alignItems: 'center',
   },
-  diaBtnAtivo: { backgroundColor: '#2563EB', borderColor: '#2563EB' },
-  diaBtnText: { fontSize: 14, fontWeight: '600', color: '#64748B' },
+  diaBtnAtivo: { backgroundColor: colors.primary, borderColor: colors.primary },
+  diaBtnText: { fontSize: 14, fontWeight: '900', color: colors.muted },
   diaBtnTextAtivo: { color: '#fff' },
   btnSalvar: {
-    backgroundColor: '#2563EB',
-    borderRadius: 12,
-    padding: 16,
+    backgroundColor: colors.primary,
+    borderRadius: 16,
+    padding: 17,
     alignItems: 'center',
-    marginTop: 28,
-    marginBottom: 48,
+    marginTop: 18,
+    ...shadows.float,
   },
-  btnSalvarText: { fontSize: 17, fontWeight: 'bold', color: '#fff' },
+  disabled: { opacity: 0.7 },
+  btnSalvarText: { fontSize: 16, fontWeight: '900', color: '#fff' },
 });

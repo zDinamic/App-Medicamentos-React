@@ -5,6 +5,7 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db, firebaseConfigurado } from '../config/firebase';
+import { colors, shadows } from '../theme';
 
 const DIAS_SEMANA = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
@@ -92,13 +93,15 @@ export default function HistoricoScreen() {
     const doseMed = med?.dose ?? '';
     return (
       <View style={styles.item}>
-        <View style={styles.itemIcone}>
-          <Text style={styles.icone}>{item.tomado ? '✅' : '❌'}</Text>
+        <View style={[styles.itemIcone, item.tomado ? styles.iconeTomado : styles.iconePendente]}>
+          <Text style={[styles.iconeText, item.tomado ? styles.iconeTextTomado : styles.iconeTextPendente]}>
+            {item.tomado ? '✓' : '!'}
+          </Text>
         </View>
         <View style={styles.itemInfo}>
           <Text style={styles.itemNome}>{nomeMed}</Text>
           {!!doseMed && <Text style={styles.itemDose}>{doseMed}</Text>}
-          {!!item.horario && <Text style={styles.itemHorario}>🕐 {item.horario}</Text>}
+          {!!item.horario && <Text style={styles.itemHorario}>{item.horario}</Text>}
         </View>
         <View style={[styles.badge, item.tomado ? styles.badgeTomado : styles.badgePendente]}>
           <Text style={[styles.badgeText, item.tomado ? styles.badgeTextTomado : styles.badgeTextPendente]}>
@@ -114,8 +117,13 @@ export default function HistoricoScreen() {
     const total = section.data.length;
     return (
       <View style={styles.secaoHeader}>
-        <Text style={styles.secaoTitulo}>{formatarData(section.title)}</Text>
-        <Text style={styles.secaoResumo}>{tomados}/{total} tomados</Text>
+        <View>
+          <Text style={styles.secaoTitulo}>{formatarData(section.title)}</Text>
+          <Text style={styles.secaoSubtitulo}>{section.title}</Text>
+        </View>
+        <View style={styles.secaoResumoBadge}>
+          <Text style={styles.secaoResumo}>{tomados}/{total}</Text>
+        </View>
       </View>
     );
   };
@@ -123,24 +131,31 @@ export default function HistoricoScreen() {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#2563EB" />
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
+      <View style={styles.headerBlock}>
+        <Text style={styles.kicker}>Acompanhamento</Text>
+        <Text style={styles.title}>Histórico</Text>
+        <Text style={styles.subtitle}>Registros dos últimos 7 dias</Text>
+      </View>
+
       <SectionList
         sections={secoes}
         keyExtractor={item => item.id}
         renderItem={renderItem}
         renderSectionHeader={renderSectionHeader}
-        contentContainerStyle={secoes.length === 0 ? { flex: 1 } : { paddingBottom: 24 }}
+        contentContainerStyle={secoes.length === 0 ? styles.emptyList : styles.listContent}
+        stickySectionHeadersEnabled={false}
         ListEmptyComponent={
-          <View style={styles.center}>
-            <Text style={styles.emoji}>📅</Text>
+          <View style={styles.emptyCard}>
+            <Text style={styles.emptyIcon}>0</Text>
             <Text style={styles.emptyTitle}>Nenhum registro nos últimos 7 dias</Text>
-            <Text style={styles.emptyHint}>Use a aba Hoje para marcar os medicamentos</Text>
+            <Text style={styles.emptyHint}>Use a aba Hoje para marcar os medicamentos tomados.</Text>
           </View>
         }
       />
@@ -149,45 +164,91 @@ export default function HistoricoScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F0F4FF' },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  container: { flex: 1, backgroundColor: colors.bg },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.bg },
+  headerBlock: { paddingHorizontal: 18, paddingTop: 18, paddingBottom: 4 },
+  kicker: { fontSize: 12, color: colors.primary, fontWeight: '900', textTransform: 'uppercase' },
+  title: { fontSize: 26, fontWeight: '900', color: colors.text, marginTop: 2 },
+  subtitle: { fontSize: 14, color: colors.muted, marginTop: 4, fontWeight: '600' },
+  listContent: { paddingBottom: 24 },
+  emptyList: { flex: 1, padding: 16 },
   secaoHeader: {
+    marginHorizontal: 16,
+    marginTop: 14,
+    marginBottom: 8,
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#E0EAFF',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    marginTop: 8,
+    ...shadows.card,
   },
-  secaoTitulo: { fontSize: 15, fontWeight: '700', color: '#2563EB' },
-  secaoResumo: { fontSize: 13, color: '#64748B', fontWeight: '500' },
+  secaoTitulo: { fontSize: 17, fontWeight: '900', color: colors.text },
+  secaoSubtitulo: { fontSize: 12, color: colors.muted, marginTop: 3, fontWeight: '700' },
+  secaoResumoBadge: { backgroundColor: colors.primarySoft, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7 },
+  secaoResumo: { fontSize: 13, color: colors.primaryDark, fontWeight: '900' },
   item: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
+    paddingVertical: 14,
+    marginHorizontal: 16,
+    marginBottom: 8,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
-  itemIcone: { marginRight: 12 },
-  icone: { fontSize: 22 },
+  itemIcone: {
+    width: 38,
+    height: 38,
+    borderRadius: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  iconeTomado: { backgroundColor: colors.successSoft },
+  iconePendente: { backgroundColor: colors.dangerSoft },
+  iconeText: { fontSize: 18, fontWeight: '900' },
+  iconeTextTomado: { color: colors.success },
+  iconeTextPendente: { color: colors.danger },
   itemInfo: { flex: 1 },
-  itemNome: { fontSize: 16, fontWeight: '600', color: '#1E293B' },
-  itemDose: { fontSize: 13, color: '#64748B', marginTop: 1 },
-  itemHorario: { fontSize: 13, color: '#2563EB', marginTop: 2 },
-  badge: {
-    borderRadius: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+  itemNome: { fontSize: 16, fontWeight: '800', color: colors.text },
+  itemDose: { fontSize: 13, color: colors.muted, marginTop: 2, fontWeight: '600' },
+  itemHorario: { fontSize: 13, color: colors.primary, marginTop: 4, fontWeight: '800' },
+  badge: { borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5 },
+  badgeTomado: { backgroundColor: colors.successSoft },
+  badgePendente: { backgroundColor: colors.dangerSoft },
+  badgeText: { fontSize: 12, fontWeight: '900' },
+  badgeTextTomado: { color: colors.success },
+  badgeTextPendente: { color: colors.danger },
+  emptyCard: {
+    flex: 1,
+    backgroundColor: colors.surface,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 28,
+    ...shadows.card,
   },
-  badgeTomado: { backgroundColor: '#DCFCE7' },
-  badgePendente: { backgroundColor: '#FEE2E2' },
-  badgeText: { fontSize: 12, fontWeight: '600' },
-  badgeTextTomado: { color: '#16A34A' },
-  badgeTextPendente: { color: '#DC2626' },
-  emoji: { fontSize: 56, marginBottom: 16 },
-  emptyTitle: { fontSize: 18, fontWeight: 'bold', color: '#2563EB', textAlign: 'center' },
-  emptyHint: { fontSize: 14, color: '#9CA3AF', marginTop: 8, textAlign: 'center' },
+  emptyIcon: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    backgroundColor: colors.primarySoft,
+    color: colors.primary,
+    textAlign: 'center',
+    lineHeight: 58,
+    fontSize: 28,
+    fontWeight: '900',
+    marginBottom: 16,
+  },
+  emptyTitle: { fontSize: 18, fontWeight: '900', color: colors.text, textAlign: 'center' },
+  emptyHint: { fontSize: 14, color: colors.muted, marginTop: 8, textAlign: 'center', lineHeight: 20 },
 });

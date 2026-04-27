@@ -9,6 +9,7 @@ import MedicamentosScreen from '../screens/MedicamentosScreen';
 import DetalhesScreen from '../screens/DetalhesScreen';
 import FormularioScreen from '../screens/FormularioScreen';
 import HistoricoScreen from '../screens/HistoricoScreen';
+import { colors } from '../theme';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -17,15 +18,16 @@ function MedicamentosStack() {
   return (
     <Stack.Navigator
       screenOptions={{
-        headerStyle: { backgroundColor: '#2563EB' },
+        headerStyle: { backgroundColor: '#17172B' },
         headerTintColor: '#fff',
-        headerTitleStyle: { fontWeight: 'bold' },
+        headerTitleStyle: { fontWeight: '800' },
+        headerShadowVisible: false,
       }}
     >
       <Stack.Screen
         name="Lista"
         component={MedicamentosScreen}
-        options={{ title: 'Medicamentos' }}
+        options={{ title: 'Remédios' }}
       />
       <Stack.Screen
         name="Detalhes"
@@ -46,13 +48,20 @@ export default function AppNavigator() {
     <NavigationContainer>
       <Tab.Navigator
         screenOptions={{
-          tabBarActiveTintColor: '#2563EB',
-          tabBarInactiveTintColor: '#9CA3AF',
-          tabBarStyle: { paddingBottom: 4, height: 60 },
-          tabBarLabelStyle: { fontSize: 13, fontWeight: '600' },
-          headerStyle: { backgroundColor: '#2563EB' },
+          tabBarActiveTintColor: '#17172B',
+          tabBarInactiveTintColor: '#B4B8C6',
+          tabBarStyle: {
+            paddingTop: 7,
+            paddingBottom: 7,
+            height: 68,
+            borderTopColor: '#ECEEF3',
+            backgroundColor: colors.surface,
+          },
+          tabBarLabelStyle: { fontSize: 12, fontWeight: '800' },
+          headerStyle: { backgroundColor: '#17172B' },
           headerTintColor: '#fff',
-          headerTitleStyle: { fontWeight: 'bold', fontSize: 18 },
+          headerTitleStyle: { fontWeight: '800', fontSize: 18 },
+          headerShadowVisible: false,
         }}
       >
         <Tab.Screen
@@ -60,16 +69,17 @@ export default function AppNavigator() {
           component={HomeScreen}
           options={{
             title: 'Hoje',
-            tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>💊</Text>,
+            headerShown: false,
+            tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>●</Text>,
           }}
         />
         <Tab.Screen
           name="Medicamentos"
           component={MedicamentosStack}
           options={{
-            title: 'Medicamentos',
+            title: 'Remédios',
             headerShown: false,
-            tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>📋</Text>,
+            tabBarIcon: ({ color }) => <Text style={{ fontSize: 18, color }}>◆</Text>,
           }}
         />
         <Tab.Screen
@@ -77,7 +87,7 @@ export default function AppNavigator() {
           component={HistoricoScreen}
           options={{
             title: 'Histórico',
-            tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>📅</Text>,
+            tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>■</Text>,
           }}
         />
       </Tab.Navigator>

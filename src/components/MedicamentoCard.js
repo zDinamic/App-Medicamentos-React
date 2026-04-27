@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { colors, shadows } from '../theme';
 
-// Componente reutilizável — será preenchido nas Fases 2 e 3
 export default function MedicamentoCard({ nome, dose }) {
   return (
     <View style={styles.card}>
@@ -13,17 +13,15 @@ export default function MedicamentoCard({ nome, dose }) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
+    backgroundColor: colors.surface,
+    borderRadius: 18,
     padding: 16,
-    marginVertical: 6,
+    marginVertical: 7,
     marginHorizontal: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: colors.border,
+    ...shadows.card,
   },
-  nome: { fontSize: 18, fontWeight: 'bold', color: '#1E293B' },
-  dose: { fontSize: 15, color: '#64748B', marginTop: 4 },
+  nome: { fontSize: 18, fontWeight: '900', color: colors.text },
+  dose: { fontSize: 14, color: colors.muted, marginTop: 4, fontWeight: '600' },
 });
