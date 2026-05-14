@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { excluirMedicamento } from '../services/firestoreData';
 import { colors, shadows } from '../theme';
+import { formatarErroFirebase } from '../utils/firebaseError';
 
 export default function DetalhesScreen({ navigation, route }) {
   const { medicamento } = route.params;
@@ -23,7 +24,8 @@ export default function DetalhesScreen({ navigation, route }) {
         { text: 'OK', onPress: () => navigation.navigate('Lista') },
       ]);
     } catch (e) {
-      Alert.alert('Erro', 'Não foi possível excluir o medicamento.');
+      Alert.alert('Erro', formatarErroFirebase(e, 'Nao foi possivel excluir o medicamento.'));
+      return;
     } finally {
       setExcluindo(false);
     }

@@ -10,6 +10,7 @@ import {
   getMedicamentosEmCache,
 } from '../services/firestoreData';
 import { colors, shadows } from '../theme';
+import { formatarErroFirebase } from '../utils/firebaseError';
 
 export default function MedicamentosScreen({ navigation }) {
   const [medicamentos, setMedicamentos] = useState(() => getMedicamentosEmCache() || []);
@@ -30,7 +31,8 @@ export default function MedicamentosScreen({ navigation }) {
     try {
       setMedicamentos(await buscarMedicamentosFirestore());
     } catch (e) {
-      Alert.alert('Erro', 'Não foi possível carregar os medicamentos.');
+      Alert.alert('Erro', formatarErroFirebase(e, 'Nao foi possivel carregar os medicamentos.'));
+      return;
     } finally {
       setLoading(false);
     }

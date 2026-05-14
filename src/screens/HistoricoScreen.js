@@ -11,6 +11,7 @@ import {
   getRegistrosPeriodoEmCache,
 } from '../services/firestoreData';
 import { colors, shadows } from '../theme';
+import { formatarErroFirebase } from '../utils/firebaseError';
 
 const DIAS_SEMANA = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
@@ -108,7 +109,8 @@ export default function HistoricoScreen() {
 
       setSecoes(montarSecoes(dias, registros, medicamentos));
     } catch (e) {
-      Alert.alert('Erro', 'Não foi possível carregar o histórico.');
+      Alert.alert('Erro', formatarErroFirebase(e, 'Nao foi possivel carregar o historico.'));
+      return;
     } finally {
       setLoading(false);
     }

@@ -6,6 +6,7 @@ import {
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { atualizarMedicamento, criarMedicamento } from '../services/firestoreData';
 import { colors, shadows } from '../theme';
+import { formatarErroFirebase } from '../utils/firebaseError';
 
 const DIAS = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
 
@@ -115,7 +116,8 @@ export default function FormularioScreen({ navigation, route }) {
         }
       }
     } catch (e) {
-      Alert.alert('Erro', 'Não foi possível salvar.\nVerifique a configuração do Firebase.');
+      Alert.alert('Erro', formatarErroFirebase(e, 'Nao foi possivel salvar.'));
+      return;
     } finally {
       setSalvando(false);
     }

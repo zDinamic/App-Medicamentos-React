@@ -14,6 +14,7 @@ import {
   getRegistrosPorDataEmCache,
 } from '../services/firestoreData';
 import { colors, shadows } from '../theme';
+import { formatarErroFirebase } from '../utils/firebaseError';
 
 const DIAS_SEMANA = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 const NOMES_DIAS = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
@@ -152,7 +153,8 @@ export default function HomeScreen() {
       const registros = await buscarRegistrosPorData(rotinaAtual.dataKey);
       aplicarDados(medicamentos, registros);
     } catch (e) {
-      Alert.alert('Erro', 'Não foi possível carregar os dados.');
+      Alert.alert('Erro', formatarErroFirebase(e, 'Nao foi possivel carregar os dados.'));
+      return;
     } finally {
       setLoading(false);
     }
@@ -197,7 +199,8 @@ export default function HomeScreen() {
       setDoses(prev => prev.map(item =>
         mesmaDose(item) ? { ...item, registro: registroAnterior } : item
       ));
-      Alert.alert('Erro', 'Não foi possível registrar.');
+      Alert.alert('Erro', formatarErroFirebase(e, 'Nao foi possivel registrar.'));
+      return;
     }
   };
 
